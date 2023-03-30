@@ -1,0 +1,31 @@
+# by default, embedding layer is expected to update the embeddings automatically via gradient slice updates. 
+
+
+# call back    
+def on_batch_begin():
+    # create new embeddings for inputs to be trained, initialize with existing values.            
+def on_batch_end():
+    # update embeddings with new values?
+
+
+
+# Feature: support vocabulary update in embedding layer (low priority).
+# Add callback to update embedding vocabularies and variables every execution/step.
+# update weights in layer.call
+# combined
+# currently, variable shapes cannot be changed after graph initialization (e.g. any changes to memory allocation may break the related hardware optimizations)
+Solutions: 
+1. Vocab updates have to be before execution, e.g. create a new model for vocab updates (currently supported, selected for devices does not support dynamic memory allocation well).
+2. add mutable variable class that can change size, e.g. a derivative class of variable (complex due to hardware optimizations like colocation)
+3. keep the old embedding variable in memory?
+4. an extensible list of variables, needs to rewrite the embedding layer related to variables and lookup utils.
+
+For CPU or similar, option 2 is preferred. option 3 works well for only small-sized vocabularies, the usage seems limited. 
+option 4 is not consistent to tensorflow coding style for variables much.
+
+Add tensorflow as build dependency.
+1. add tensorflow source package to third party build. have better control of source code, easy to debug. cons: increase size of source package.
+2. add repo build rule for tensorflow (sha256 and git commit number are obsolete)
+3. add necessary build defs only and include locally built tensorflow as dependency.
+
+define/compile tf_proto_library 
