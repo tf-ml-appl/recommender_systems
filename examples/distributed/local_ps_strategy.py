@@ -1,18 +1,13 @@
 'a demo file to show the distributed training, with ps strategy and MultiEmbeddings module.'
-
-# remove this after adding build file.
-import sys
-sys.path.insert(0, '/Users/user_name/faga-ml/recommender_systems/python/base')
-
 import tensorflow as tf
 import os
 import multiprocessing
 import portpicker
-import sys
 import logging
 
-from layers.simple_layer_params import *
-from modules.multi_embeddings import *
+from examples.distributed.utils import *
+from python.base.layers.simple_layer_params import *
+from python.base.modules.multi_embeddings import *
 from tensorflow import keras
 from gensim.parsing.preprocessing import remove_stopwords
 from collections import namedtuple
@@ -34,36 +29,7 @@ FEATURE_PREPROCESS_BATCH_SIZE = BATCH_SIZE*10
 
 def create_in_process_cluster(num_workers, num_ps):
   """Creates and starts local servers and returns the cluster_resolver."""
-  worker_ports = [portpicker.pick_unused_port() for _ in range(num_workers)]
-  ps_ports = [portpicker.pick_unused_port() for _ in range(num_ps)]
-
-  cluster_dict = {}
-  cluster_dict["worker"] = ["localhost:%s" % port for port in worker_ports]
-  if num_ps > 0:
-    cluster_dict["ps"] = ["localhost:%s" % port for port in ps_ports]
-  
-  cluster_spec = tf.train.ClusterSpec(cluster_dict)
-
-  # Workers need some inter_ops threads to work properly.
-  worker_config = tf.compat.v1.ConfigProto()
-  if multiprocessing.cpu_count() < num_workers + 1:
-    worker_config.inter_op_parallelism_threads = num_workers + 1
-  
-  for i in range(num_workers):
-    tf.distribute.Server(
-        cluster_spec,
-        job_name="worker",
-        task_index=i,
-        config=worker_config,
-        protocol="grpc")
-
-  for i in range(num_ps):
-    tf.distribute.Server(
-        cluster_spec,
-        job_name="ps",
-        task_index=i,
-        protocol="grpc")
- 
+  cluster_spec = create_local_cluster(num_workers, num_ps)
   cluster_resolver = tf.distribute.cluster_resolver.SimpleClusterResolver(
       cluster_spec, rpc_layer="grpc")
   return cluster_resolver
@@ -89,19 +55,18 @@ def data_preprocessing():
     
     return tokenized_texts, targets_list 
    
-if __name__ == '__main__':
+def run():
     logging.getLogger().setLevel(logging.WARNING)
 
     os.environ["GRPC_FAIL_FAST"] = "use_caller"
     NUM_WORKERS = 2
     NUM_PS = 2
     cluster_resolver = create_in_process_cluster(NUM_WORKERS, NUM_PS)
-    print(cluster_resolver.cluster_spec())
     
     variable_partitioner = (
         tf.distribute.experimental.partitioners.MinSizePartitioner(
             min_shard_bytes=(256 << 10),
-            max_shards=1))
+            max_shards=NUM_PS))
 
     strategy = tf.distribute.ParameterServerStrategy(
         cluster_resolver,

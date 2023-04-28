@@ -1,19 +1,14 @@
 'a demo file to show the distributed training, with ps strategy and MultiEmbeddings module on gcloud.'
 
-# remove this after adding build file.
-import sys
-sys.path.insert(0, '/Users/YingyingZhu/Dropbox/ml_opensource/recommender_systems/python/base')
-
-
 import os
-import sys
 import logging
 
 import tensorflow_datasets as tfds
 import tensorflow as tf
 
-from layers.simple_layer_params import *
-from modules.multi_embeddings import *
+from examples.distributed.utils import *
+from python.base.layers.simple_layer_params import *
+from python.base.modules.multi_embeddings import *
 from tensorflow import keras
 from gensim.parsing.preprocessing import remove_stopwords
 from google.oauth2 import service_account
@@ -24,6 +19,8 @@ from google.oauth2 import service_account
 
 
 # tunable model parameters.
+NUM_WORKER = 2
+NUM_PS = 2
 BATCH_SIZE = 128*16
 OUTPUT_UNITS = 5
 EMBEDDING_SIZE = 32
@@ -32,7 +29,7 @@ MAX_WORDS = 200
 FEATURE_PREPROCESS_BATCH_SIZE = BATCH_SIZE*10    
 
 # TODO: revise the cluster resolver creation for each instance.
-def create_in_process_cluster(num_workers, num_ps):
+def create_gcloud_cluster_resolver(task_type, task_id):
   cluster_dict = {}
   cluster_dict["worker"] = ["35.247.59.144:8478", "35.233.173.77:8478"]
   cluster_dict["ps"] = ["35.230.38.63:8478"]
@@ -44,8 +41,8 @@ def create_in_process_cluster(num_workers, num_ps):
   
   _ = tf.distribute.cluster_resolver.GCEClusterResolver(
     project='keras-distributed', zone='us-west1-a', instance_group='instance-group-1', port=8474,
-    task_type="worker",
-    task_id=0,
+    task_type=task_type,
+    task_id=task_id,
     credentials=gcloud_credentials)
  
   cluster_spec = tf.train.ClusterSpec(cluster_dict)
@@ -75,24 +72,23 @@ def data_preprocessing():
     
     return tokenized_texts, targets_list 
    
-if __name__ == '__main__':
-    logging.getLogger().setLevel(logging.WARNING)
-
+def run_local(task_type='worker', task_id=0):
     os.environ["GRPC_FAIL_FAST"] = "use_caller"
-    NUM_WORKERS = 2
-    NUM_PS = 2
-    cluster_resolver = create_in_process_cluster(NUM_WORKERS, NUM_PS)
-    print(cluster_resolver.cluster_spec())
-    
-    variable_partitioner = (
-        tf.distribute.experimental.partitioners.MinSizePartitioner(
-            min_shard_bytes=(256 << 10),
-            max_shards=1))
-
+    if task_type == 'master':
+        cluster_spec = create_local_cluster(num_workers=NUM_WORKER, num_ps=NUM_PS)
+        cluster_resolver = tf.distribute.cluster_resolver.SimpleClusterResolver(cluster_spec)
+        variable_partitioner = (
+            tf.distribute.experimental.partitioners.MinSizePartitioner(
+                min_shard_bytes=(256 << 10),
+                max_shards=NUM_PS))
+      
+    else:
+        cluster_resolver = tf.distribute.cluster_resolver.SimpleClusterResolver(cluster_spec, task_type=task_type, task_id=task_id)
+  
     strategy = tf.distribute.ParameterServerStrategy(
         cluster_resolver,
-        variable_partitioner=variable_partitioner)   
-    
+        variable_partitioner=variable_partitioner)     
+            
     tokenized_texts, targets_list = data_preprocessing()
     
     def dataset_fn(_):
