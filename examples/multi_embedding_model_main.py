@@ -1,10 +1,7 @@
 'a demo file to show the usage of MultiEmbeddings module and model.'
 
-import sys
-sys.path.insert(0, '/Users/YingyingZhu/Dropbox/ml_opensource/recommender_systems/python/base')
-
-from layers.simple_layer_params import *
-from models.multi_embedding_model import *
+from python.base.layers.simple_layer_params import *
+from python.base.models.multi_embedding_model import *
 from gensim.parsing.preprocessing import remove_stopwords
 
 import tensorflow as tf

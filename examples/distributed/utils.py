@@ -1,3 +1,5 @@
+import os
+import sys
 import portpicker
 import multiprocessing
 
@@ -37,3 +39,9 @@ def create_local_cluster(num_workers, num_ps):
         protocol="grpc")
  
   return cluster_spec
+
+# calls from root path.
+def add_root_path():
+    root_path = os.getcwd()
+    sys.path.insert(0, root_path)
+    os.system('export PATH=$PATH:${root_path}')

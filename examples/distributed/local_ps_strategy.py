@@ -1,8 +1,7 @@
 'a demo file to show the distributed training, with ps strategy and MultiEmbeddings module.'
 import tensorflow as tf
 import os
-import multiprocessing
-import portpicker
+import time
 import logging
 
 from examples.distributed.utils import *
@@ -10,7 +9,6 @@ from python.base.layers.simple_layer_params import *
 from python.base.modules.multi_embeddings import *
 from tensorflow import keras
 from gensim.parsing.preprocessing import remove_stopwords
-from collections import namedtuple
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
@@ -56,9 +54,6 @@ def data_preprocessing():
     return tokenized_texts, targets_list 
    
 def run():
-    logging.getLogger().setLevel(logging.WARNING)
-
-    os.environ["GRPC_FAIL_FAST"] = "use_caller"
     NUM_WORKERS = 2
     NUM_PS = 2
     cluster_resolver = create_in_process_cluster(NUM_WORKERS, NUM_PS)
@@ -127,12 +122,15 @@ def run():
     per_worker_dataset = coordinator.create_per_worker_dataset(per_worker_dataset_fn)
     per_worker_iterator = iter(per_worker_dataset) 
 
-    num_epochs = 4
+    num_epochs = 10
     steps_per_epoch = 10000
 
+    start = time.time()
     for i in range(num_epochs):
         metric.reset_states()
         for _ in range(steps_per_epoch):
             coordinator.schedule(train_step, args=(per_worker_iterator,))
             coordinator.join()
         print("Finished epoch %d, accuracy is %f." % (i, metric.result().numpy()))
+    end = time.time()
+    logging.info(f'the training time is {end-start}.')

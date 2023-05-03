@@ -1,6 +1,6 @@
 from tensorflow import keras
 from collections import namedtuple
-from layers.simple_layer_params import *
+from python.base.layers.simple_layer_params import *
 
 import numpy as np
 import tensorflow as tf

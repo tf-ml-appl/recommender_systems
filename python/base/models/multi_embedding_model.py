@@ -1,8 +1,8 @@
 'a demo plain deep model for multi-variant features'
 
 from tensorflow import keras
-from layers.simple_layer_params import *
-from modules.multi_embeddings import *
+from python.base.layers.simple_layer_params import *
+from python.base.modules.multi_embeddings import *
 
 
 class MultiEmbeddingModel(keras.Model):

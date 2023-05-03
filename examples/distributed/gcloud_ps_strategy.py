@@ -1,6 +1,7 @@
 'a demo file to show the distributed training, with ps strategy and MultiEmbeddings module on gcloud.'
 
 import os
+import time
 import logging
 
 import tensorflow_datasets as tfds
@@ -36,7 +37,7 @@ def create_gcloud_cluster_resolver(task_type, task_id):
   cluster_dict["chief"] = ["34.127.101.1:8479"]
   
   gcloud_credentials = service_account.Credentials.from_service_account_file(
-    '/Users/yingyingzhu/Downloads/keras-distributed-5148febc7c44.json' 
+    'path_to_json_credential_file' 
   )  
   
   _ = tf.distribute.cluster_resolver.GCEClusterResolver(
@@ -86,6 +87,99 @@ def run_local(task_type='worker', task_id=0):
         cluster_resolver = tf.distribute.cluster_resolver.SimpleClusterResolver(cluster_spec, task_type=task_type, task_id=task_id)
   
     strategy = tf.distribute.ParameterServerStrategy(
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+           
         cluster_resolver,
         variable_partitioner=variable_partitioner)     
             
@@ -144,16 +238,18 @@ def run_local(task_type='worker', task_id=0):
     per_worker_dataset = coordinator.create_per_worker_dataset(per_worker_dataset_fn)
     per_worker_iterator = iter(per_worker_dataset) 
 
-    num_epochs = 4
+    num_epochs = 10
     steps_per_epoch = 10000
-
+    
+    start = time.time()
     for i in range(num_epochs):
         metric.reset_states()
         for _ in range(steps_per_epoch):
             coordinator.schedule(train_step, args=(per_worker_iterator,))
             coordinator.join()
         print("Finished epoch %d, accuracy is %f." % (i, metric.result().numpy()))
-        
+    end = time.time()
+    logging.info(f'the training time is {end-start}.')
         
 # TODO: allocate each instance per cluster_resolver, run the code for each instance with the cluster_resolver in loops. 
 # reference for run a distributed job in each instance: cloudml-dist-mnist-example/start-training.sh.

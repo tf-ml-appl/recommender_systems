@@ -1,4 +1,4 @@
-from layers.simple_layer_params import *
+from python.base.layers.simple_layer_params import *
 
 import tensorflow as tf
 

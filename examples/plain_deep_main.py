@@ -1,18 +1,10 @@
-import sys
-sys.path.insert(0, '/Users/YingyingZhu/Dropbox/ml_opensource/recommender_systems/python/base')
-print(sys.path)
-    
 from collections import defaultdict
 from tensorflow import keras
-from models.plain_deep import *
+from python.base.models.plain_deep import *
 
 import tensorflow_datasets as tfds
 import tensorflow as tf
 
-import logging
-
-    
-logging.getLogger().setLevel(logging.INFO)
 
 BATCH_SIZE = 128*16
 OUTPUT_UNITS = 5
@@ -133,7 +125,7 @@ def train_step(inputs):
   # result = {'loss': loss, 'metric': metric.result(), 'targets': targets, 'predicts': predicts, 'outputs': outputs}
   return result
 
-if __name__ == '__main__':
+def run():
     # TODO: adds movie_feature_vocabularies
     for i in range(200):
         batch = dataset_iter.get_next()
@@ -145,3 +137,4 @@ if __name__ == '__main__':
         if i%100 == 0:
             logging.info(f'step {i} loss: {loss}')
             logging.info(f'metric: {metric}')
+    
